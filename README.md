@@ -107,9 +107,9 @@ python scripts/make_figures.py --only fig_4_4   # tek figür
 
 | Dosya | Tez | Açıklama |
 |---|---|---|
-| `figures/fig_4_1_bh_validation.png` | Şekil 4.1 | B&H doğrulaması: durağan Hiemenz profili (f''(0) = 1.232588) + tekil durumda 1/\|G_m\| doğrusal yaklaşımı, bant [3.38, 3.41]. |
-| `figures/beta0_slope.png` | Şekil 4.2 | β → 0 bağımsız yakınsama: log-log O(β) eğimi + önfaktör paneli (verbatim kopya). |
-| `figures/bh_anchor_loop.png` | Şekil 4.3 | Ölçek-değişmez çapa döngüsü f''(0)–a(τ): Çözücü A(β=0) vs kanonik B&H (verbatim kopya). |
+| `figures/fig_4_1_bh_validation.png` | Şekil 4.1 | Blyth ve Hall doğrulaması: durağan Hiemenz profili (f''(0) = 1.232588) + tekil durumda 1/\|G_m\| doğrusal yaklaşımı, bant [3.38, 3.41]. |
+| `figures/beta0_slope.png` | Şekil 4.2 | β → 0 bağımsız yakınsama: log-log O(β) eğimi + öncül-katsayı paneli (β→0 doğrulama önbelleğinden, `data/beta0/`, Türkçe üretim). |
+| `figures/bh_anchor_loop.png` | Şekil 4.3 | f''(0)–a(τ) çevrimi: viskoelastik çözücü (β=0) ile Newtonian çözücünün örtüşmesi (β→0 doğrulama önbelleğinden, `data/beta0/`, Türkçe üretim). |
 | `figures/fig_4_4_delay.png` | Şekil 4.4 | Gecikme: Δτ_s(β) = +0.022 / +0.052 / +0.087, tahminci zarfıyla. |
 | `figures/fig_4_5_window.png` | Şekil 4.5 | Pencere daralması: σ_c(β) noktaları + σ_c ≈ 1.15 − 0.6β yasası + B&H ≈1.12. |
 | `figures/fig_4_6_exponent.png` | Şekil 4.6 | Üs korunumu: 1/\|G_m\| vs τ, β ∈ {0, 0.1, 0.2, 0.3}, hepsi doğrusal (üs −1). |

@@ -56,9 +56,19 @@ yerine yalnız figürlerin kullandığı SON TAM PERİYOT saklanır.
 belgelenmiş çağrısıyla anlık hesaplanır: `rfnc_steady.solve_steady(0, 0, N=120,
 η_max=12, a=1)` (`viscoelastic_stagnation/bh_validation/run_validation.py` ile aynı).
 
-## Hazır figürler (verbatim kopya; yeniden üretilmez)
+## β→0 doğrulama önbelleği (verbatim kopya) ve Şekil 4.2–4.3
 
-| Depo dosyası | Kaynak yol | Rol |
-|---|---|---|
-| `figures/beta0_slope.png` | `newt_sol/beta0_indep/outputs/beta0_slope.png` | Şekil 4.2: β→0 O(β) yakınsama (log-log eğim + önfaktör paneli). |
-| `figures/bh_anchor_loop.png` | `newt_sol/beta0_indep/outputs/bh_anchor_loop.png` | Şekil 4.3: ölçek-değişmez çapa döngüsü f''(0)–a(τ), Çözücü A(β=0) vs kanonik B&H. |
+`data/beta0/` — `newt_sol/beta0_indep/cache/` içinden bayt-özdeş kopyalar (23
+dosya): `A_N{180,360}_b{0, 0.012, 0.018, 0.025, 0.035, 0.05, 0.07, 0.1, 0.14,
+0.2}.npz` (Çözücü A periyodik marşlar, Δ=0.5, σ=0.5, η_max=18, dt=2π/1256,
+6 periyot), `B_pert.npz` (pertürbasyon çözücüsü, f₁''(0,τ)),
+`BH_3bc_N180.npz` + `BH_4bc_N180.npz` (Newtonian referans marşlar).
+
+`figures/beta0_slope.png` (Şekil 4.2) ve `figures/bh_anchor_loop.png`
+(Şekil 4.3) bu önbellekten `scripts/make_figures.py` (fig_4_2 / fig_4_3)
+tarafından Türkçe metinle üretilir; gösterilen tüm sayılar
+`certification/beta0_convergence.md` içindeki doğrulanmış değerlerin
+birebir aynısıdır (asimptotik eğim 0.9660; C_A = C_B = 3.1357; çevrim
+üzerinde en büyük bağıl fark 3.3e-8). İngilizce orijinal görseller kaynak
+çalışma alanında (`newt_sol/beta0_indep/outputs/`) durur; doğrulama belgesi
+`certification/` altında değiştirilmeden korunur.

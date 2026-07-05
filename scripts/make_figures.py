@@ -157,25 +157,128 @@ def fig_4_1():
     ax[0].set_ylabel(r"$f'(\eta)$")
     ax[0].set_xlim(0, 6)
     ax[0].set_title(r"(a) Durağan Hiemenz profili ($\beta=0$, $a=1$)")
-    ax[0].annotate(r"$f''(0)=1{.}232588$" "\n(kanonik çapa)",
+    ax[0].annotate(r"$f''(0)=1{,}232588$" "\n(referans değer)",
                    xy=(2.6, 0.35), fontsize=10,
                    bbox=dict(fc="white", ec="gray", alpha=0.9))
     ax[1].plot(tau[m], 1.0 / (-gmin[m]), "o", ms=3, c="k",
-               label=r"$1/|G_m|$ (aktif pencere $M\geq 1$)")
+               label=r"$1/|G_m|$ değerleri")
     tt = np.linspace(tau[m][0], 3.41, 50)
-    ax[1].plot(tt, s * tt + c, "-", c="C3", lw=1.5, label="doğrusal fit")
+    ax[1].plot(tt, s * tt + c, "-", c="C3", lw=1.5, label="doğrusal uyum")
     ax[1].axvspan(3.38, 3.41, color="C2", alpha=0.25,
-                  label=r"sertifikalı bant $\tau_s\in[3{.}38,\,3{.}41]$")
+                  label=r"referans aralık $[3{,}38\,;\,3{,}41]$")
     ax[1].set_xlabel(r"$\tau$")
     ax[1].set_ylabel(r"$1/|G_m|$")
     ax[1].set_ylim(bottom=0)
     ax[1].set_title(r"(b) Tekil durum $\Delta=2$, $\sigma=0.5$: $\tau_s$'e doğrusal yaklaşım")
     ax[1].legend(fontsize=8)
-    fig.suptitle(r"B&H Newtonian doğrulaması ($\beta=0$)", fontsize=12)
+    fig.suptitle(r"Blyth ve Hall probleminin doğrulanması ($\beta=0$)", fontsize=12)
     fig.tight_layout(rect=[0, 0, 1, 0.95])
     _save(fig, "fig_4_1_bh_validation.png")
     key = f"f''(0)={fpp0:.6f}; 1/|G_m| fit kesisimi bant icinde: {'EVET' if ok_b else 'HAYIR'} (R2={R2:.3f})"
     return ("OK", key, ok_a and ok_b)
+
+
+def _beta0_load(name):
+    """beta->0 doğrulama önbelleği (data/beta0/, bayt-özdeş kopyalar)."""
+    return np.load(os.path.join(DATA, "beta0", name + ".npz"))
+
+
+def _beta0_lastper(y):
+    """Son tam periyot [5P, 6P] (dt = 2pi/1256, 6 periyot -> kesin indeksler)."""
+    return np.asarray(y)[5 * 1256:6 * 1256 + 1]
+
+
+def fig_4_2():
+    """Şekil 4.2 (beta0_slope): beta->0 O(beta) yakınsaması, Türkçe metinle,
+    data/beta0/ önbelleğinden yeniden üretim (sayılar birebir aynı)."""
+    bb = np.array([0.012, 0.018, 0.025, 0.035, 0.05, 0.07, 0.1, 0.14, 0.2])
+    ref = {N: _beta0_lastper(_beta0_load(f"A_N{N}_b0")["fpp0"])
+           for N in (180, 360)}
+    E = {N: np.array([float(np.max(np.abs(
+        _beta0_lastper(_beta0_load(f"A_N{N}_b{b:g}")["fpp0"]) - ref[N])))
+        for b in bb]) for N in (180, 360)}
+    gates_ok = bool(np.all(np.abs(E[180] - E[360]) / E[360] <= 0.05))
+    logb, logE = np.log(bb), np.log(E[360])
+    Amat = np.vstack([logb, np.ones_like(logb)]).T
+    coef, _, _, _ = np.linalg.lstsq(Amat, logE, rcond=None)
+    slope, ic = float(coef[0]), float(coef[1])
+    resid = logE - Amat @ coef
+    s2 = np.sum(resid ** 2) / (len(bb) - 2)
+    se = float(np.sqrt((s2 * np.linalg.inv(Amat.T @ Amat))[0, 0]))
+    pair = float(np.log(E[360][1] / E[360][0]) / np.log(bb[1] / bb[0]))
+    pol = np.polyfit(bb[:5], E[360][:5] / bb[:5], 2)
+    C_A = float(pol[-1])
+    C_B = float(np.max(np.abs(_beta0_lastper(_beta0_load("B_pert")["f1pp0"]))))
+    ok = (gates_ok and abs(pair - 0.9660) < 2e-3
+          and abs(C_A - 3.1357) < 2e-3 and abs(C_B - 3.1357) < 2e-3)
+
+    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(11.5, 5.0))
+    ax.loglog(bb, E[360], "o", ms=8, color="C0",
+              label=r"$E_{2N}(\beta)$  ($N=360$)")
+    ax.loglog(bb, E[180], "s", ms=4, mfc="none", color="C7",
+              label=r"$E_{N}(\beta)$  ($N=180$)")
+    bfit = np.array([bb.min(), bb.max()])
+    ax.loglog(bfit, np.exp(ic) * bfit ** slope, "-", color="C0", lw=1.5,
+              label=rf"doğrusal uyum (eğim ${slope:.3f}\pm{se:.3f}$)")
+    ax.loglog(bfit, C_B * bfit, "--", color="C2", lw=1.2,
+              label=r"$C_B\,\beta$ (Çözücü B)")
+    ax.set_xlabel(r"$\beta$")
+    ax.set_ylabel(r"$E(\beta)=\max_\tau|f''(0)_\beta - f''(0)_0|$")
+    ax.set_title(r"(a) $E(\beta)$ farkının $\beta\to 0$ davranışı")
+    ax.annotate(rf"asimptotik eğim $\approx {pair:.3f}$" "\n(beklenen 1)",
+                xy=(0.05, 0.72), xycoords="axes fraction", fontsize=10,
+                bbox=dict(fc="white", ec="gray", alpha=0.9))
+    ax.grid(alpha=0.3, which="both")
+    ax.legend(fontsize=8, loc="lower right")
+    rat = E[360] / bb
+    ax2.plot(bb, rat, "o", ms=7, color="C0", label=r"$E_{2N}(\beta)/\beta$")
+    bq = np.linspace(0.0, bb.max() * 1.02, 200)
+    ax2.plot(bq, np.polyval(pol, bq), "-", color="C0", lw=1.2, alpha=0.7,
+             label=r"ikinci derece uyum (5 en küçük $\beta$)")
+    ax2.plot(0.0, C_A, "d", ms=9, color="C0")
+    ax2.axhline(C_B, color="C2", ls="--", lw=1.2, label=r"$C_B$ (Çözücü B)")
+    ax2.set_xlabel(r"$\beta$")
+    ax2.set_ylabel(r"$E_{2N}(\beta)/\beta$")
+    ax2.set_title(r"(b) Öncül katsayının kestirimi")
+    ax2.annotate(rf"$C_A = {C_A:.3f}$ (Çözücü A)" "\n"
+                 rf"$C_B = {C_B:.3f}$ (Çözücü B)",
+                 xy=(0.35, 0.72), xycoords="axes fraction", fontsize=10,
+                 bbox=dict(fc="white", ec="gray", alpha=0.9))
+    ax2.legend(fontsize=8, loc="lower left")
+    fig.suptitle(r"$\beta\to 0$ yakınsaması ($\Delta=0.5$, $\sigma=0.5$, $k=0$)",
+                 fontsize=12)
+    fig.tight_layout(rect=[0, 0, 1, 0.94])
+    _save(fig, "beta0_slope.png")
+    key = (f"asimptotik eğim {pair:.4f}; C_A={C_A:.4f} C_B={C_B:.4f}; "
+           f"eğim(global) {slope:.4f}±{se:.4f}")
+    return ("OK", key, bool(ok))
+
+
+def fig_4_3():
+    """Şekil 4.3 (bh_anchor_loop): f''(0)-a(tau) çevrimi, Türkçe metinle,
+    data/beta0/ önbelleğinden yeniden üretim."""
+    dA = _beta0_load("A_N180_b0")
+    fA, aA = _beta0_lastper(dA["fpp0"]), _beta0_lastper(dA["a"])
+    f3 = _beta0_lastper(_beta0_load("BH_3bc_N180")["fpp0"])
+    f4 = _beta0_lastper(_beta0_load("BH_4bc_N180")["fpp0"])
+    rel3 = float(np.max(np.abs(fA - f3) / np.abs(f3)))
+    ident4 = float(np.max(np.abs(fA - f4)))
+    ok = rel3 < 1e-2 and ident4 == 0.0
+    fig, ax = plt.subplots(figsize=(7.2, 5.0))
+    ax.plot(aA, fA, "-", lw=2.2, color="C0",
+            label=r"viskoelastik çözücü ($\beta = 0$)")
+    ax.plot(aA, f3, "--", lw=1.6, color="C1",
+            label="Newtonian çözücü (Blyth ve Hall)")
+    ax.plot(aA, f4, ":", lw=1.4, color="C2", label="_nolegend_")
+    ax.set_xlabel(r"$a(\tau)$")
+    ax.set_ylabel(r"$f''(0,\tau)$")
+    ax.set_title(r"$f''(0)$–$a(\tau)$ çevrimi, son periyot "
+                 r"($\Delta = 0{,}5$; $\sigma = 0{,}5$)")
+    ax.grid(alpha=0.3)
+    ax.legend(fontsize=9)
+    _save(fig, "bh_anchor_loop.png")
+    key = f"çevrim üzerinde en büyük bağıl fark {rel3:.2e} (< 1e-2)"
+    return ("OK", key, bool(ok))
 
 
 def fig_4_4():
@@ -201,7 +304,7 @@ def fig_4_4():
     ax.axhline(0.0, c="k", lw=0.7)
     ax.set_xlabel(r"$\beta$ (Deborah sayısı)")
     ax.set_ylabel(r"$\Delta\tau_s=\tau_s(\beta)-\tau_s(0)$")
-    ax.set_title(r"Viskoelastisite tekilliği GECİKTİRİR: $\Delta\tau_s(\beta)>0$"
+    ax.set_title(r"Viskoelastisite tekilliği geciktirir: $\Delta\tau_s(\beta)>0$"
                  "\n" r"($\Delta=2$, $\sigma=0.5$; çözünürlük-yakınsak yeniden hesap)")
     ax.legend(fontsize=8, loc="upper left")
     _save(fig, "fig_4_4_delay.png")
@@ -227,7 +330,7 @@ def fig_4_5():
     ax.plot(bl, law(bl), "--", c="k", lw=1.5,
             label=r"$\sigma_c \approx 1{.}15 - 0{.}6\,\beta$")
     ax.plot([0.0], [1.12], "s", c="C3", ms=9, mfc="none", mew=2,
-            label=r"B&H (Newtonian) $\sigma_c\approx 1{.}12$")
+            label=r"Blyth ve Hall (Newtonian) $\sigma_c\approx 1{,}12$")
     ax.axvspan(0.3, 0.52, color="red", alpha=0.06)
     ax.set_xlabel(r"$\beta$ (Deborah sayısı)")
     ax.set_ylabel(r"$\sigma_c$")
@@ -260,7 +363,7 @@ def fig_4_6():
     ax.set_xlabel(r"$\tau$")
     ax.set_ylabel(r"$1/|G_m|$")
     ax.set_ylim(bottom=0)
-    ax.set_title(r"Banks-Zaturska üssü KORUNUR: $G_m\propto(\tau_s-\tau)^{-1}$"
+    ax.set_title(r"Banks–Zaturska üssü korunur: $G_m\propto(\tau_s-\tau)^{-1}$"
                  "\n" r"$\Rightarrow 1/|G_m|$ doğrusal (aktif pencere $M\geq 1$; "
                  r"$\Delta=2$, $\sigma=0.5$, $\eta_{max}=30$, $N=400$)")
     ax.annotate(r"üs $=-1$, tüm $\beta\leq 0.3$" "\n"
@@ -286,19 +389,21 @@ def fig_4_7():
                                          abs(np.degrees(ph3))) < 5.0
 
     fig, ax = plt.subplots(figsize=(7.2, 4.5))
-    ax.plot(t0, f0, "-", c=CB[0.0], lw=2, label=r"$\beta=0$ (Newtonian, B&H)")
+    ax.plot(t0, f0, "-", c=CB[0.0], lw=2,
+            label=r"$\beta=0$ (Newtonian, Blyth ve Hall)")
     ax.plot(t3, f3, "--", c=CB[0.3], lw=2, label=r"$\beta=0.3$ (ikinci derece)")
     ax.set_xlabel(r"$\tau$ mod $2\pi$")
     ax.set_ylabel(r"$f''(0,\tau)$")
     ax.set_xlim(0, PER)
-    ax.set_title(r"Duvar kayması, oturmuş periyot ($\Delta=0.5$, $\sigma=0.5$)")
+    ax.set_ylim(0.1, 2.45)
+    ax.set_title(r"Duvar kayması, son periyot ($\Delta=0.5$, $\sigma=0.5$)")
     ax.annotate("salınım genliği sönümü:\n"
                 rf"$1-{A3:.3f}/{A0:.3f} \approx \%{100*damp:.0f}$" "\n"
                 rf"faz farkı $|\varphi|\lesssim 5^\circ$ "
                 rf"({np.degrees(ph0):+.1f}$^\circ\to${np.degrees(ph3):+.1f}$^\circ$)",
-                xy=(0.35, 0.04), xycoords="axes fraction", fontsize=9.5,
-                bbox=dict(fc="white", ec="gray", alpha=0.9))
-    ax.legend(fontsize=9, loc="upper right")
+                xy=(0.36, 0.72), xycoords="axes fraction", fontsize=9.5,
+                bbox=dict(fc="white", ec="gray", alpha=0.95))
+    ax.legend(fontsize=9, loc="lower left")
     _save(fig, "fig_4_7_wall_shear_series.png")
     key = f"sonum = %{100*damp:.1f} (sertifika ~%28); faz {np.degrees(ph3):+.1f} derece"
     return ("OK", key, bool(ok))
@@ -330,7 +435,7 @@ def fig_4_8():
     ax[0].set_ylabel(r"$f'(\eta)$")
     ax[0].set_title(r"(a) $\beta=0$")
     ax[1].set_title(r"(b) $\beta=0.3$")
-    ax[1].annotate(r"sınır tabakası KALINLAŞIR:" "\n"
+    ax[1].annotate(r"sınır tabakası kalınlaşır:" "\n"
                    rf"$\delta^*(\tau{{\equiv}}0)$: {ds0:.3f} $\to$ {ds3:.3f}"
                    rf"  ($+\%{100*(ds3/ds0-1):.0f}$)",
                    xy=(0.33, 0.08), xycoords="axes fraction", fontsize=9.5,
@@ -362,19 +467,20 @@ def fig_4_9():
         bool(np.all(np.diff(areas) < 0))
     ax[0].set_xlabel(r"$a(\tau) = 1 + \Delta\cos\tau$")
     ax[0].set_ylabel(r"$f''(0,\tau)$")
-    ax[0].set_title(r"(a) Elastik hafıza döngüsü ($\Delta=0.5$, $\sigma=0.5$)")
+    ax[0].set_title(r"(a) $f''(0)$–$a(\tau)$ çevrimi ($\Delta=0.5$, $\sigma=0.5$)")
     ax[0].legend(fontsize=9)
     ax[1].plot(bb, areas / areas[0], "o-", c="C0", lw=1.8,
-               label=r"döngü alanı / alan$(\beta{=}0)$")
+               label=r"çevrim alanı / $(\beta{=}0)$ alanı")
     ax[1].plot(bb, norm / norm[0], "s--", c="C3", lw=1.8,
-               label=r"(alan/genlik$^2$) / aynı oran$(\beta{=}0)$")
+               label=r"alan / genlik$^2$, $(\beta{=}0)$'a oranla")
     ax[1].axhline(1.0, c="k", lw=0.7)
     ax[1].set_xlabel(r"$\beta$")
     ax[1].set_ylabel("orana göre normalize")
     ax[1].set_ylim(0.4, 1.15)
-    ax[1].set_title(r"(b) Döngü KÜÇÜLÜR ama alan/genlik$^2$ $\beta$-DEĞİŞMEZ")
-    ax[1].annotate(rf"alan/genlik$^2$ sapması $<\%{100*(np.max(norm)/np.min(norm)-1):.1f}$",
-                   xy=(0.05, 0.32), xycoords="axes fraction", fontsize=9,
+    ax[1].set_title(r"(b) Çevrim alanının genlik karesine göre ölçeklenmesi")
+    ax[1].annotate(rf"alan / genlik$^2$ sapması $<\%{100*(np.max(norm)/np.min(norm)-1):.1f}$"
+                   "\n" r"($\beta$'dan bağımsız)",
+                   xy=(0.05, 0.30), xycoords="axes fraction", fontsize=9,
                    bbox=dict(fc="white", ec="gray", alpha=0.9))
     ax[1].legend(fontsize=8, loc="lower left")
     fig.tight_layout()
@@ -524,6 +630,8 @@ def fig_4_11():
 
 FIGURES = {
     "fig_4_1": (fig_4_1, "fig_4_1_bh_validation.png"),
+    "fig_4_2": (fig_4_2, "beta0_slope.png"),
+    "fig_4_3": (fig_4_3, "bh_anchor_loop.png"),
     "fig_4_4": (fig_4_4, "fig_4_4_delay.png"),
     "fig_4_5": (fig_4_5, "fig_4_5_window.png"),
     "fig_4_6": (fig_4_6, "fig_4_6_exponent.png"),
