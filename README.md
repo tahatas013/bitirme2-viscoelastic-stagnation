@@ -116,6 +116,8 @@ python scripts/make_figures.py --only fig_4_4   # tek figür
 | `figures/fig_4_7_wall_shear_series.png` | Şekil 4.7 | Periyodik duvar kayması f''(0,τ): β = 0 vs 0.3; genlik sönümü ≈%28, faz ≲5°. |
 | `figures/fig_4_8_profiles.png` | Şekil 4.8 | Hız profilleri f'(η), 4 faz: sınır tabakası β ile kalınlaşır. |
 | `figures/fig_4_9_hysteresis.png` | Şekil 4.9 | Histerezis döngüleri + alan/genlik² β-değişmezliği. |
+| `figures/fig_4_10_profiles_fdf.png` | Şekil 4.10 | Benzerlik fonksiyonu ve türevleri f, f′, f″ (τ≡0 fazı, a=1.5): β, duvar kayması f″(0)'ı düşürür, tabakayı kalınlaştırır. |
+| `figures/fig_4_11_delta_star_beta.png` | Şekil 4.11 | Yer-değiştirme kalınlığı δ*(τ), β ∈ {0, 0.1, 0.2, 0.3}: viskoelastisite tabakayı tüm salınım boyunca kalınlaştırır. |
 
 ## 7. Kaynaklar
 

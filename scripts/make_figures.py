@@ -38,6 +38,7 @@ os.makedirs(FIGS, exist_ok=True)
 
 import config_sg as C            # noqa: E402  (sertifikali, import-only)
 import solver_a_sg as SA         # noqa: E402
+import bh_solver as bh           # noqa: E402  (sertifikali, import-only)
 from rfnc_steady import solve_steady  # noqa: E402
 
 PER = 2.0 * np.pi
@@ -150,14 +151,14 @@ def fig_4_1():
     ok_b = 3.37 <= x_int <= 3.42   # sertifikalı bant [3.38,3.41] (+dt paylari)
 
     fig, ax = plt.subplots(1, 2, figsize=(10, 4.2))
-    ax[0].plot(fp[o], eta[o], "-", c="k", lw=2)
-    ax[0].axvline(1.0, ls=":", c="gray", lw=1)
-    ax[0].set_xlabel(r"$f'(\eta)$")
-    ax[0].set_ylabel(r"$\eta$")
-    ax[0].set_ylim(0, 6)
+    ax[0].plot(eta[o], fp[o], "-", c="k", lw=2)
+    ax[0].axhline(1.0, ls=":", c="gray", lw=1)
+    ax[0].set_xlabel(r"$\eta$")
+    ax[0].set_ylabel(r"$f'(\eta)$")
+    ax[0].set_xlim(0, 6)
     ax[0].set_title(r"(a) Durağan Hiemenz profili ($\beta=0$, $a=1$)")
     ax[0].annotate(r"$f''(0)=1{.}232588$" "\n(kanonik çapa)",
-                   xy=(0.35, 1.2), fontsize=10,
+                   xy=(2.6, 0.35), fontsize=10,
                    bbox=dict(fc="white", ec="gray", alpha=0.9))
     ax[1].plot(tau[m], 1.0 / (-gmin[m]), "o", ms=3, c="k",
                label=r"$1/|G_m|$ (aktif pencere $M\geq 1$)")
@@ -321,20 +322,20 @@ def fig_4_8():
 
     fig, ax = plt.subplots(1, 2, figsize=(10, 4.2), sharey=True)
     for i in range(4):
-        ax[0].plot(fps0[i], eta0, "-", c=PHASE_C[i], lw=1.8, label=lab[i])
-        ax[1].plot(fps3[i], eta3, "-", c=PHASE_C[i], lw=1.8, label=lab[i])
+        ax[0].plot(eta0, fps0[i], "-", c=PHASE_C[i], lw=1.8, label=lab[i])
+        ax[1].plot(eta3, fps3[i], "-", c=PHASE_C[i], lw=1.8, label=lab[i])
     for a_ in ax:
-        a_.set_xlabel(r"$f'(\eta)$")
-        a_.set_ylim(0, 8)
-    ax[0].set_ylabel(r"$\eta$")
+        a_.set_xlabel(r"$\eta$")
+        a_.set_xlim(0, 8)
+    ax[0].set_ylabel(r"$f'(\eta)$")
     ax[0].set_title(r"(a) $\beta=0$")
     ax[1].set_title(r"(b) $\beta=0.3$")
     ax[1].annotate(r"sınır tabakası KALINLAŞIR:" "\n"
                    rf"$\delta^*(\tau{{\equiv}}0)$: {ds0:.3f} $\to$ {ds3:.3f}"
                    rf"  ($+\%{100*(ds3/ds0-1):.0f}$)",
-                   xy=(0.30, 0.80), xycoords="axes fraction", fontsize=9.5,
+                   xy=(0.33, 0.08), xycoords="axes fraction", fontsize=9.5,
                    bbox=dict(fc="white", ec="gray", alpha=0.9))
-    ax[0].legend(fontsize=8, loc="upper left")
+    ax[0].legend(fontsize=8, loc="lower right")
     fig.suptitle(r"Hız profilleri, oturmuş periyot içindeki 4 faz "
                  r"($\Delta=0.5$, $\sigma=0.5$)", fontsize=12)
     fig.tight_layout(rect=[0, 0, 1, 0.94])
@@ -383,6 +384,144 @@ def fig_4_9():
     return ("OK", key, bool(ok))
 
 
+def profile_full(beta):
+    """f, f', f'' profilleri tek fazda (tau = 5*2pi, yani tau ≡ 0, a = 1.5).
+
+    fig_4_8 ile AYNI belgelenmiş sertifikalı reçete (figs_thesis.py):
+    SA.snapshot_profiles(Delta=0.5, sigma=0.5, beta, eta_max=22, N=200,
+    dt=0.005); data/ altına önbelleklenir.
+    """
+    p = os.path.join(DATA, f"profiles_full_beta{beta:g}.npz")
+    if os.path.exists(p):
+        d = np.load(p)
+        return d["eta"], d["f"], d["fp"], d["fpp"]
+    tq = [5 * PER]
+    snaps = SA.snapshot_profiles(0.5, 0.5, beta, 22.0, 200, tq, dt=0.005)
+    if snaps is None:
+        raise RuntimeError(f"snapshot_profiles IC basarisiz (beta={beta})")
+    eta, f, fp, fpp = snaps[tq[0]]
+    o = np.argsort(eta)
+    np.savez(p, eta=eta[o], f=f[o], fp=fp[o], fpp=fpp[o])
+    return eta[o], f[o], fp[o], fpp[o]
+
+
+def fig_4_10():
+    """Benzerlik fonksiyonu f ve türevleri f', f'' (tau ≡ 0): beta=0 vs 0.3."""
+    e0, F0, FP0, FPP0 = profile_full(0.0)
+    e3, F3, FP3, FPP3 = profile_full(0.3)
+    w0, w3 = float(FPP0[0]), float(FPP3[0])
+    # tutarlılık kilidi: f''(0) periyodik önbelleğin tau ≡ 0 örneğiyle uyuşmalı
+    ok = abs(float(F0[0])) < 1e-9 and abs(float(FP0[0])) < 1e-9
+    for beta, w in ((0.0, w0), (0.3, w3)):
+        d = np.load(os.path.join(DATA, f"periodic_beta{beta:g}.npz"))
+        ok = ok and abs(w - float(d["fpp0"][0])) < 0.01
+    fig, ax = plt.subplots(1, 3, figsize=(11.5, 3.9))
+    panels = [(F0, F3, r"$f(\eta)$", r"(a) $f$: akım fonksiyonu"),
+              (FP0, FP3, r"$f'(\eta)$", r"(b) $f'$: hız"),
+              (FPP0, FPP3, r"$f''(\eta)$", r"(c) $f''$: kayma")]
+    for a_, (y0, y3, ylab, ttl) in zip(ax, panels):
+        a_.plot(e0, y0, "-", c=CB[0.0], lw=2, label=r"$\beta=0$")
+        a_.plot(e3, y3, "--", c=CB[0.3], lw=2, label=r"$\beta=0.3$")
+        a_.set_xlim(0, 8)
+        a_.set_xlabel(r"$\eta$")
+        a_.set_ylabel(ylab)
+        a_.set_title(ttl, fontsize=10)
+    ax[0].annotate(r"$f(0)=0$", xy=(0.07, 0.90), xycoords="axes fraction",
+                   fontsize=9, bbox=dict(fc="white", ec="gray", alpha=0.9))
+    ax[1].annotate(r"$f'(0)=0$", xy=(0.07, 0.90), xycoords="axes fraction",
+                   fontsize=9, bbox=dict(fc="white", ec="gray", alpha=0.9))
+    ax[2].annotate(rf"$f''(0)$: {w0:.3f} $\to$ {w3:.3f}" "\n"
+                   r"($\beta$ duvar kaymasını düşürür)",
+                   xy=(0.28, 0.75), xycoords="axes fraction", fontsize=9,
+                   bbox=dict(fc="white", ec="gray", alpha=0.9))
+    ax[1].legend(fontsize=9, loc="lower right")
+    fig.suptitle(r"Benzerlik fonksiyonu ve türevleri, $\tau\equiv 0$ fazı "
+                 r"($a=1.5$; $\Delta=0.5$, $\sigma=0.5$)", fontsize=11.5)
+    fig.tight_layout(rect=[0, 0, 1, 0.92])
+    _save(fig, "fig_4_10_profiles_fdf.png")
+    key = f"f''(0): {w0:.3f} -> {w3:.3f} (periyodik önbellekle tutarlı)"
+    return ("OK", key, bool(ok))
+
+
+def dstar_history(beta):
+    """delta*(tau) son tam periyot; thesis_figs.py::_dstar_history'nin
+    belgelenmiş sertifikalı reçetesi (Delta=0.5, sigma=0.5, 7 periyot,
+    eta_max=20, N=200, dt=0.005, '4bc'; import-only bh.steady_ic +
+    bh.newton_step). data/ altına önbelleklenir; dönüş: (tg, ds, a, regen)."""
+    p = os.path.join(DATA, f"dstar_beta{beta:g}.npz")
+    if os.path.exists(p):
+        d = np.load(p)
+        return d["tg"], d["ds"], d["a"], False
+    _trapz = getattr(np, "trapezoid", np.trapz)
+    Delta, sigma, n_periods, eta_max, N, dt = 0.5, 0.5, 7, 20.0, 200, 0.005
+    A = C.A_of_sigma(sigma)
+    invA = 1.0 / A
+    a0 = bh.a_outer(0.0, Delta, 1.0, "bh")
+    U, ops = bh.steady_ic(beta, 0.0, a0, N, eta_max)
+    if U is None:
+        raise RuntimeError(f"steady IC basarisiz (beta={beta})")
+    eta, D1 = ops["eta"], ops["D1"]
+    o = np.argsort(eta)
+    es = eta[o]
+    Uold = U.copy()
+    rec_t, rec_d, rec_a = [], [], []
+    nstep = int(round(n_periods * PER / dt))
+    for n in range(nstep + 1):
+        tau = n * dt
+        if n > 0:
+            U, okk, _ = bh.newton_step(U, ops, beta, dt, Uold, tau, 0.0, Delta,
+                                       1.0, invA, "bh", "4bc")
+            if not okk:
+                raise RuntimeError(f"newton_step basarisiz (beta={beta}, tau={tau})")
+            Uold = U.copy()
+        a = bh.a_outer(tau, Delta, 1.0, "bh")
+        fp = D1 @ U
+        rec_t.append(tau)
+        rec_d.append(float(_trapz(1.0 - fp[o] / a, es)))
+        rec_a.append(a)
+    t = np.array(rec_t)
+    ds = np.array(rec_d)
+    aa = np.array(rec_a)
+    nP = int(t[-1] // PER)
+    m = (t >= (nP - 1) * PER) & (t < nP * PER)
+    tg = t[m] - (nP - 1) * PER
+    np.savez(p, tg=tg, ds=ds[m], a=aa[m])
+    return tg, ds[m], aa[m], True
+
+
+def fig_4_11():
+    """Yer-değiştirme kalınlığı delta*(tau), beta in {0, 0.1, 0.2, 0.3}."""
+    bb = [0.0, 0.1, 0.2, 0.3]
+    fig, ax = plt.subplots(figsize=(7.2, 4.5))
+    means, lock = {}, {}
+    regen = []
+    for b in bb:
+        tg, ds, a, was_regen = dstar_history(b)
+        if was_regen:
+            regen.append(b)
+        means[b] = float(np.mean(ds))
+        lock[b] = float(ds[0])                       # tau ≡ 0 örneği
+        ax.plot(tg, ds, "-", c=CB[b], lw=1.9,
+                label=rf"$\beta={b:g}$  (ort. $\overline{{\delta^*}}={means[b]:.3f}$)")
+    # kilit: fig_4_8'in sertifikalı delta*(tau≡0) notuyla uyuşmalı
+    ok_lock = abs(lock[0.0] - 0.529) < 2e-3 and abs(lock[0.3] - 0.769) < 2e-3
+    ok_order = means[0.0] < means[0.1] < means[0.2] < means[0.3]
+    ax.set_xlim(0, PER)
+    ax.set_xlabel(r"$\tau$ mod $2\pi$")
+    ax.set_ylabel(r"$\delta^*(\tau)$")
+    ax.set_title(r"Yer-değiştirme kalınlığı "
+                 r"$\delta^*(\tau)=\int_0^{\eta_{max}}(1-f'/a)\,d\eta$"
+                 "\n" r"($\Delta=0.5$, $\sigma=0.5$): $\beta$ tabakayı tüm "
+                 r"salınım boyunca kalınlaştırır")
+    ax.legend(fontsize=9)
+    _save(fig, "fig_4_11_delta_star_beta.png")
+    key = (f"delta*(tau=0): {lock[0.0]:.3f} / {lock[0.3]:.3f} "
+           f"(kilit 0.529 / 0.769); ort. "
+           + "/".join(f"{means[b]:.3f}" for b in bb)
+           + (f"; yeniden uretilen beta: {[f'{b:g}' for b in regen]}" if regen else ""))
+    return ("OK", key, bool(ok_lock and ok_order))
+
+
 FIGURES = {
     "fig_4_1": (fig_4_1, "fig_4_1_bh_validation.png"),
     "fig_4_4": (fig_4_4, "fig_4_4_delay.png"),
@@ -391,6 +530,8 @@ FIGURES = {
     "fig_4_7": (fig_4_7, "fig_4_7_wall_shear_series.png"),
     "fig_4_8": (fig_4_8, "fig_4_8_profiles.png"),
     "fig_4_9": (fig_4_9, "fig_4_9_hysteresis.png"),
+    "fig_4_10": (fig_4_10, "fig_4_10_profiles_fdf.png"),
+    "fig_4_11": (fig_4_11, "fig_4_11_delta_star_beta.png"),
 }
 
 
@@ -405,7 +546,8 @@ def main():
         return
     todo = list(FIGURES)
     if args.only:
-        todo = [k for k in FIGURES if args.only in k]
+        todo = ([args.only] if args.only in FIGURES
+                else [k for k in FIGURES if args.only in k])
         if not todo:
             sys.exit(f"bilinmeyen figur: {args.only}")
     rows = []
