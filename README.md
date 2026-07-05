@@ -57,7 +57,7 @@ ama alan/genlik² oranı β-değişmezdir; faz farkı ≲5°.
 τ_s disiplini: mutlak τ_s tek sayı olarak verilmez; Newtonian doğrulamada bant
 τ_s ∈ [3.38, 3.41] (B&H raporu 3.39), β etkisi daima fark Δτ_s olarak rapor edilir.
 
-## 3. Doğrulama (üç ayaklı sertifikasyon)
+## 3. Doğrulama (üç ayaklı onaylama)
 
 1. **β → 0, B&H'yi kurtarır.** Durağan çapa f''(0) = 1.232588 (6 hane);
    tekil durumda τ_s bandı [3.38, 3.41] ∋ 3.39. Ayrıca Çözücü A'nın β → 0
