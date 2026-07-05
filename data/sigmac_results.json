@@ -1,0 +1,46 @@
+{
+  "0.0": {
+    "sigma_c": 1.15,
+    "labels": [
+      "singular",
+      "singular",
+      "singular",
+      "singular",
+      "periodic",
+      "periodic"
+    ]
+  },
+  "0.1": {
+    "sigma_c": 1.05,
+    "labels": [
+      "singular",
+      "singular",
+      "singular",
+      "periodic",
+      "periodic",
+      "periodic"
+    ]
+  },
+  "0.3": {
+    "sigma_c": 0.95,
+    "labels": [
+      "singular",
+      "singular",
+      "periodic",
+      "periodic",
+      "periodic",
+      "periodic"
+    ]
+  },
+  "0.5": {
+    "sigma_c": 0.95,
+    "labels": [
+      "singular",
+      "singular",
+      "periodic",
+      "periodic",
+      "periodic",
+      "periodic"
+    ]
+  }
+}
