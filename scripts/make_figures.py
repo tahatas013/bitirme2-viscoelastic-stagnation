@@ -301,6 +301,7 @@ def fig_4_4():
     for b, v in zip(bb, mid):
         ax.annotate(rf"$+{v:.3f}$", xy=(b, v), xytext=(b + 0.006, v - 0.012),
                     fontsize=10)
+    ax.set_xlim(0.085, 0.335)
     ax.axhline(0.0, c="k", lw=0.7)
     ax.set_xlabel(r"$\beta$ (Deborah sayısı)")
     ax.set_ylabel(r"$\Delta\tau_s=\tau_s(\beta)-\tau_s(0)$")
@@ -364,14 +365,15 @@ def fig_4_6():
     ax.set_ylabel(r"$1/|G_m|$")
     ax.set_ylim(bottom=0)
     ax.set_title(r"Banks–Zaturska üssü korunur: $G_m\propto(\tau_s-\tau)^{-1}$"
-                 "\n" r"$\Rightarrow 1/|G_m|$ doğrusal (aktif pencere $M\geq 1$; "
-                 r"$\Delta=2$, $\sigma=0.5$, $\eta_{max}=30$, $N=400$)")
-    ax.annotate(r"üs $=-1$, tüm $\beta\leq 0.3$" "\n"
+                 "\n" r"$1/|G_m|$ büyüklüğünün doğrusal davranışı "
+                 r"($\Delta = 2$, $\sigma = 0{,}5$)")
+    ax.annotate(r"üs $=-1$, tüm $\beta\leq 0{,}3$" "\n"
                 r"(yalnız önkatsayı kayar: $|G_m|(\tau_s-\tau)$: "
-                rf"{E['0.0']['gm_const']:.2f} $\to$ {E['0.3']['gm_const']:.2f})",
-                xy=(0.03, 0.72), xycoords="axes fraction", fontsize=9,
-                bbox=dict(fc="white", ec="gray", alpha=0.9))
-    ax.legend(fontsize=8, loc="lower right")
+                rf"{E['0.0']['gm_const']:.2f} $\to$ {E['0.3']['gm_const']:.2f})"
+                "\n" rf"($\eta_{{max}}=30$, $N=400$)",
+                xy=(0.03, 0.05), xycoords="axes fraction", fontsize=9,
+                va="bottom", bbox=dict(fc="white", ec="0.5", alpha=0.95))
+    ax.legend(fontsize=8, loc="upper right")
     _save(fig, "fig_4_6_exponent.png")
     key = "R2(1/|G_m| dogrusalligi) = " + \
         ", ".join(f"{b:g}: {R2s[b]:.3f}" for b in R2s)
@@ -401,8 +403,9 @@ def fig_4_7():
                 rf"$1-{A3:.3f}/{A0:.3f} \approx \%{100*damp:.0f}$" "\n"
                 rf"faz farkı $|\varphi|\lesssim 5^\circ$ "
                 rf"({np.degrees(ph0):+.1f}$^\circ\to${np.degrees(ph3):+.1f}$^\circ$)",
-                xy=(0.36, 0.72), xycoords="axes fraction", fontsize=9.5,
-                bbox=dict(fc="white", ec="gray", alpha=0.95))
+                xy=(0.63, 0.03), xycoords="axes fraction", fontsize=9,
+                va="bottom", ha="left",
+                bbox=dict(fc="white", ec="0.5", alpha=0.95))
     ax.legend(fontsize=9, loc="lower left")
     _save(fig, "fig_4_7_wall_shear_series.png")
     key = f"sonum = %{100*damp:.1f} (sertifika ~%28); faz {np.degrees(ph3):+.1f} derece"
@@ -476,13 +479,13 @@ def fig_4_9():
     ax[1].axhline(1.0, c="k", lw=0.7)
     ax[1].set_xlabel(r"$\beta$")
     ax[1].set_ylabel("orana göre normalize")
-    ax[1].set_ylim(0.4, 1.15)
+    ax[1].set_ylim(0.4, 1.24)
     ax[1].set_title(r"(b) Çevrim alanının genlik karesine göre ölçeklenmesi")
     ax[1].annotate(rf"alan / genlik$^2$ sapması $<\%{100*(np.max(norm)/np.min(norm)-1):.1f}$"
                    "\n" r"($\beta$'dan bağımsız)",
-                   xy=(0.05, 0.30), xycoords="axes fraction", fontsize=9,
-                   bbox=dict(fc="white", ec="gray", alpha=0.9))
-    ax[1].legend(fontsize=8, loc="lower left")
+                   xy=(0.04, 0.04), xycoords="axes fraction", fontsize=9,
+                   va="bottom", bbox=dict(fc="white", ec="0.5", alpha=0.95))
+    ax[1].legend(fontsize=8, loc="upper right")
     fig.tight_layout()
     _save(fig, "fig_4_9_hysteresis.png")
     key = ("alanlar = " + "/".join(f"{v:.4f}" for v in areas)
@@ -534,7 +537,7 @@ def fig_4_10():
         a_.set_title(ttl, fontsize=10)
     ax[0].annotate(r"$f(0)=0$", xy=(0.07, 0.90), xycoords="axes fraction",
                    fontsize=9, bbox=dict(fc="white", ec="gray", alpha=0.9))
-    ax[1].annotate(r"$f'(0)=0$", xy=(0.07, 0.90), xycoords="axes fraction",
+    ax[1].annotate(r"$f'(0)=0$", xy=(0.30, 0.12), xycoords="axes fraction",
                    fontsize=9, bbox=dict(fc="white", ec="gray", alpha=0.9))
     ax[2].annotate(rf"$f''(0)$: {w0:.3f} $\to$ {w3:.3f}" "\n"
                    r"($\beta$ duvar kaymasını düşürür)",
